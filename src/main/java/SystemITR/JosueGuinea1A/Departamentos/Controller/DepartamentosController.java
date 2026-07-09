@@ -18,8 +18,11 @@ import java.util.Map;
 @RequestMapping("/api/departamento")
 public class DepartamentosController {
 
-    @Autowired
-    private DepartamentosService service;
+    private final DepartamentosService service;
+
+    public DepartamentosController(DepartamentosService service) {
+        this.service = service;
+    }
 
     @PostMapping
     public ResponseEntity<ApiResponse<DepartamentosDTO>> nuevoDepartamento(@Valid @RequestBody DepartamentosDTO json){
@@ -40,18 +43,39 @@ public class DepartamentosController {
     }
 
     @GetMapping
-    public ResponseEntity<List<DepartamentosDTO>> obtenerDepartamentos(){
+    public ResponseEntity<ApiResponse<List<DepartamentosDTO>> >obtenerDepartamentos(){
         try{
             List<DepartamentosDTO> listaDTO = service.listarTodos();
-            if (listaDTO == null || listaDTO.isEmpty()){
-                ResponseEntity.badRequest().body(Map.of(
-                        "status", "No hay departamentos registrados"
-                ));
+            if (listaDTO != null){
+              ApiResponse<List<DepartamentosDTO>> repuestaExitosa = new ApiResponse<>(true, "Proceso completado", listaDTO);
+              return ResponseEntity.ok(repuestaExitosa);
             }
-            return ResponseEntity.ok(listaDTO);
+            ApiResponse<List<DepartamentosDTO>> repuestaNoData = new ApiResponse<> (true, "No hay datos por mostrar", null);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(repuestaNoData);
         }catch (Exception e){
             log.info("No hay departamentos registrados");
-            throw new RuntimeException("No hay datos");
+            e.printStackTrace();
+            ApiResponse<List<DepartamentosDTO>> repuestaError = new ApiResponse<>(false, "No se pudo obtener los datos", null);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(repuestaError);
+        }
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse<DepartamentosDTO>> obtenerDepartamentoPorId(@PathVariable Long id){
+        try{
+            DepartamentosDTO dto = service.buscarDepartamento(id);
+            if (dto != null){
+               //Armar la repuesta utilizando ApiResponse
+                ApiResponse<DepartamentosDTO> repuestaExitosa = new ApiResponse<>(true, "Dato encontrado", dto);
+                return ResponseEntity.ok(repuestaExitosa);
+            }
+            ApiResponse<DepartamentosDTO> noEncontrado= new ApiResponse<>(false, "Datos no encontrados", null);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(noEncontrado);
+        }catch (Exception e){
+            log.info("No hay departamentos registrados");
+           e.printStackTrace();
+           ApiResponse<DepartamentosDTO> repuestaError = new ApiResponse<>(false, "No se pudo completar la busquedad del id ID"+ id, null);
+           return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(repuestaError);
         }
     }
 }
