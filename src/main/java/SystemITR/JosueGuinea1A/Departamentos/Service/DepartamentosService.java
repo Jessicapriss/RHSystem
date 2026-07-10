@@ -73,4 +73,20 @@ public class DepartamentosService {
         //Validar si el ID existe, en caso fuera cierto convertimos el dato a DTO, de lo contrario retornamos un null
         return entidadOpcional.map(this::convertirADTO).orElse(null);
     }
+
+    public boolean eliminarInfo(Long id) {
+        //Paso 1:Verificar la existencia del ID
+        if(repo.existsById(id)){
+            //Paso2: Eliminar el registro
+            repo.deleteById(id);
+            //Paso3: Retornar true en caso existe o retornar false en caso no existe
+            return true;
+        }
+        return false;
+
+    }
+
+    public DepartamentosDTO actualizarInfo(Long id, @Valid DepartamentosDTO dto) {
+        return null;
+    }
 }
