@@ -19,14 +19,14 @@ public class DepartamentosService {
     @Autowired
     private DepartamentosRepository repo;
 
-    public DepartamentosDTO insertarDatos(@Valid DepartamentosDTO jsonData){
+    public DepartamentosDTO insertarDatos(@Valid DepartamentosDTO jsonData) {
         //Validando que el objeto json no sea nulo
-        if (jsonData == null){
+        if (jsonData == null) {
             throw new IllegalArgumentException("El departamento no puede ser nulo");
         }
 
         //Intentar hacer la inserción
-        try{
+        try {
             //1. Convertir el objeto DTO a Entity
             System.out.println("Bandera 1: Ejecución antes de conversión");
             DepartamentosEntity entity = convertirAEntity(jsonData);
@@ -37,7 +37,7 @@ public class DepartamentosService {
             //Una vez que los datos han sido ingresados la respuesta debe convertirse a DTO nuevamente
             //ahora de Entity -> DTO
             return convertirADTO(entitySave);
-        }catch (Exception e){
+        } catch (Exception e) {
             log.error("Error al ingresar la información del departamento" + e.getMessage());
             throw new RuntimeException("Error al registrar el departamento");
         }
@@ -69,14 +69,14 @@ public class DepartamentosService {
     }
 
     public DepartamentosDTO buscarDepartamento(Long id) {
-        Optional<DepartamentosEntity> entidadOpcional =  repo.findById(id);
+        Optional<DepartamentosEntity> entidadOpcional = repo.findById(id);
         //Validar si el ID existe, en caso fuera cierto convertimos el dato a DTO, de lo contrario retornamos un null
         return entidadOpcional.map(this::convertirADTO).orElse(null);
     }
 
     public boolean eliminarInfo(Long id) {
         //Paso 1:Verificar la existencia del ID
-        if(repo.existsById(id)){
+        if (repo.existsById(id)) {
             //Paso2: Eliminar el registro
             repo.deleteById(id);
             //Paso3: Retornar true en caso existe o retornar false en caso no existe
@@ -87,6 +87,45 @@ public class DepartamentosService {
     }
 
     public DepartamentosDTO actualizarInfo(Long id, @Valid DepartamentosDTO dto) {
-        return null;
+        try {
+            //1.Buscar si el departamento realmente existe por su id
+            Optional<DepartamentosEntity> entidadOpcional = repo.findById(id);
+            //2.Verificar si objeto contiene valores (utilizando if)
+            if (entidadOpcional.isPresent()) {
+                //2.1.Creamos un objeto de tipo identidad
+                DepartamentosEntity entidad = entidadOpcional.get();
+                //2.2.Convertir y asignar los dtos (nuevos valores) a entidad
+                entidad.setNombreDepto(dto.getNombreDepto());
+                entidad.setAbreviatura(dto.getAbreviatura());
+                entidad.setUbicacion(dto.getUbicacion());
+                //2.3.Actualizar los datos e n la base de datos
+                DepartamentosEntity datosGuardados = repo.save(entidad);
+                //2.4.Retornar la data convertirda a DTO de forma previa
+                return convertirADTO(datosGuardados);
+
+            }
+            //3. Retornar null
+            return null;
+
+
+        } catch (Exception e) {
+            log.error("Oops ocurrio un error al procesar la informacion");
+            return null;
+        }
+    }
+
+    public DepartamentosDTO buscarAbreviatura(String abreviatura) {
+        try{
+            Optional<DepartamentosEntity> registro = repo.findByAbreviatura(abreviatura);
+            if (registro.isPresent()){
+                return convertirADTO(registro.get());
+            }
+            log.warn("No existe ningun departamento con abreviatura: " + abreviatura);
+            return null;
+        }catch (Exception e){
+            log.error("Ocurrio un error duarante el proceso");
+            return null;
+        }
     }
 }
+
